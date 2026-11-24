@@ -27,6 +27,47 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate AWS deployment variables
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$AWS_REGION" || (echo "Missing GitHub environment variable: AWS_REGION" >&2; exit 1)
+          test -n "$AWS_ROLE_ARN" || (echo "Missing GitHub environment variable: AWS_ROLE_ARN" >&2; exit 1)
+          test -n "$ECR_REPOSITORY" || (echo "Missing GitHub environment variable: ECR_REPOSITORY" >&2; exit 1)
+          test -n "$EC2_INSTANCE_ID" || (echo "Missing GitHub environment variable: EC2_INSTANCE_ID" >&2; exit 1)
+          echo "AWS_REGION=$AWS_REGION"
+          echo "AWS_ROLE_ARN=$AWS_ROLE_ARN"
+          echo "ECR_REPOSITORY=$ECR_REPOSITORY"
+          echo "EC2_INSTANCE_ID=$EC2_INSTANCE_ID"
+
+      - name: Show OIDC subject for AWS assume-role debugging
+        env:
+          OIDC_AUDIENCE: sts.amazonaws.com
+        run: |
+          set -euo pipefail
+          token=$(curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=$OIDC_AUDIENCE")
+          id_token=$(printf '%s' "$token" | python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])')
+          python3 - "$id_token" <<'PY'
+          import base64
+          import json
+          import sys
+
+          parts = sys.argv[1].split(".")
+          if len(parts) != 3:
+              raise SystemExit("Invalid OIDC token format")
+          payload = parts[1] + "=" * (-len(parts[1]) % 4)
+          claims = json.loads(base64.urlsafe_b64decode(payload))
+          print(f"GitHub OIDC sub: {claims.get('sub', '')}")
+          print(f"GitHub OIDC aud: {claims.get('aud', '')}")
+          print(f"GitHub OIDC repository: {claims.get('repository', '')}")
+          print(f"GitHub OIDC branch/ref: {claims.get('ref', '')}")
+          PY
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
