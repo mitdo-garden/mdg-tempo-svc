@@ -21,7 +21,7 @@ jobs:
     name: Build, push, and deploy
     runs-on: ubuntu-latest
     environment:
-      name: prd
+      name: mitdo-cloud-tempo-svc-prd
 
     steps:
       - name: Checkout
