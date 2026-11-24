@@ -1,0 +1,53 @@
+# Shared defaults. Profiles merge like Spring:
+#   config.yaml → config.<APP_ENV>.yaml → config.<profile>.yaml (from app.profiles / APP_PROFILES)
+# Overlay files should only list deltas.
+#
+# Placeholders:
+#   ${NAME}            → env or empty
+#   ${NAME:default}    → env or default
+#   ${A:${B:fallback}} → nested
+
+app:
+  name: ${APP_NAME:mdg-tempo-svc}
+  profiles: []
+
+server:
+  port: "${SERVER_PORT:5002}"
+  read_timeout_seconds: 15
+  write_timeout_seconds: 30
+  idle_timeout_seconds: 60
+
+# Loopback only. Reach it with an SSH or kubectl port-forward, not the public API.
+pprof:
+  addr: ${PPROF_ADDR:127.0.0.1:6060}
+
+mysql:
+  host: ${MYSQL_HOST:}
+  port: "${MYSQL_PORT:3306}"
+  user: ${MYSQL_USER:}
+  password: "${MYSQL_PASSWORD:}"
+  database: ${MYSQL_DATABASE:mdg_tempo}
+  params: ${MYSQL_PARAMS:parseTime=true&loc=UTC}
+  dsn: "${MYSQL_DSN:}"
+
+jwt:
+  issuer: ${JWT_ISSUER:mdg-auth-svc}
+  jwks_url: ${JWT_JWKS_URL:}
+
+frontend:
+  url: ${FRONTEND_URL:}
+
+cookie:
+  name: ${COOKIE_NAME:mitdo_session}
+
+media:
+  upload_dir: ${MEDIA_UPLOAD_DIR:uploads}
+  public_base_url: ${MEDIA_PUBLIC_BASE_URL:}
+
+# Reminder job: every interval, one tempo, Telegram text is name + tags only.
+telegram:
+  bot_token: "${TELEGRAM_BOT_TOKEN:}"
+  bot_username: ${TELEGRAM_BOT_USERNAME:mitdobot}
+  bot_name: ${TELEGRAM_BOT_NAME:Mitdo}
+  chat_id: "${TELEGRAM_CHAT_ID:}"
+  interval: ${TELEGRAM_REMIND_INTERVAL:1m}

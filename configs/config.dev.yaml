@@ -1,0 +1,27 @@
+# Deltas on config.yaml (APP_ENV=dev).
+app:
+  env: dev
+
+server:
+  port: "${SERVER_PORT:8081}"
+
+mysql:
+  host: ${MYSQL_HOST:gateway01.ap-southeast-1.prod.aws.tidbcloud.com}
+  port: "${MYSQL_PORT:3306}"
+  params: "${MYSQL_PARAMS:parseTime=true&loc=UTC&tls=true}"
+  user: ${MYSQL_USER:3Gkv9nJJJ1CuB2R.root}
+  password: "${MYSQL_PASSWORD:StLjClL3uRDdv7PF}"
+
+jwt:
+  jwks_url: ${JWT_JWKS_URL:http://localhost:8080/.well-known/jwks.json}
+
+frontend:
+  url: ${FRONTEND_URL:http://mitdo.tech:5173}
+
+media:
+  public_base_url: ${MEDIA_PUBLIC_BASE_URL:http://mitdo.tech:8081/media}
+
+telegram:
+  bot_token: "${TELEGRAM_BOT_TOKEN:9053806069:AAHkNsimW3wvWyKHMXu7y7VsipOTZ0-Ue0s}"
+  bot_username: ${TELEGRAM_BOT_USERNAME:mitdobot}
+  bot_name: ${TELEGRAM_BOT_NAME:Mitdo}

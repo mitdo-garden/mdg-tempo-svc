@@ -1,0 +1,10 @@
+# Deltas on config.yaml (APP_ENV=prd) — inject hosts/secrets via env.
+app:
+  env: prd
+
+server:
+  port: "${SERVER_PORT:8081}"
+
+# Off unless an operator sets PPROF_ADDR=127.0.0.1:6060 for a live profile.
+pprof:
+  addr: "${PPROF_ADDR:}"

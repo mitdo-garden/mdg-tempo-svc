@@ -1,0 +1,23 @@
+# Deltas on config.yaml (APP_ENV=test).
+app:
+  env: test
+
+server:
+  port: "${SERVER_PORT:5003}"
+
+mysql:
+  host: ${MYSQL_HOST:127.0.0.1}
+  port: "${MYSQL_PORT:3306}"
+  user: ${MYSQL_USER:root}
+  password: "${MYSQL_PASSWORD:root}"
+  database: ${MYSQL_DATABASE:mdg_tempo_test}
+
+jwt:
+  jwks_url: ${JWT_JWKS_URL:http://localhost:5001/.well-known/jwks.json}
+
+frontend:
+  url: ${FRONTEND_URL:http://localhost:5173}
+
+media:
+  upload_dir: ${MEDIA_UPLOAD_DIR:uploads-test}
+  public_base_url: ${MEDIA_PUBLIC_BASE_URL:http://localhost:5003/media}
