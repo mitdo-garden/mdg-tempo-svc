@@ -14,6 +14,10 @@ import (
 	"github.com/mitdo-garden/mdg-tempo-svc/internal/schedule"
 )
 
+type reviewQuery struct {
+	Seed string `query:"seed"`
+}
+
 // GetReview — GET /review
 // Returns a lightweight queue (ids + labels). Full card content is loaded
 // on demand via GET /review/tempos/:id.
@@ -22,10 +26,20 @@ func (h *Handler) GetReview(c fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	h.logOp(c, "get_review", "building review queue")
+
+	var query reviewQuery
+	if err := reqvalid.Query(c, &query); err != nil {
+		return err
+	}
+
+	seed := strings.TrimSpace(query.Seed)
+	if seed == "" {
+		seed = fmt.Sprintf("%d", time.Now().UnixNano())
+	}
+	h.logOp(c, "get_review", "building review queue", "seed", seed)
 	now := time.Now().UTC()
 
-	due, err := h.tempos.ListDueTempos(c.Context(), uid, now)
+	due, err := h.tempos.ListDueTempos(c.Context(), uid, now, seed)
 	if err != nil {
 		logInternal(h.logger, c, "list due tempos failed", err)
 		return httperr.Write(c, fiber.StatusInternalServerError, "server", "Request failed.")
@@ -71,6 +85,7 @@ func (h *Handler) GetReview(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"source": source,
 		"items":  items,
+		"seed":   seed,
 	})
 }
 

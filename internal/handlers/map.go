@@ -21,6 +21,7 @@ type mapQuery struct {
 	Q      string `query:"q"`
 	Due    string `query:"due" validate:"omitempty,oneof=true false 1 0"`
 	Tag    string `query:"tag"`
+	Seed   string `query:"seed"`
 	Limit  *int   `query:"limit" validate:"omitempty,min=1,max=100"`
 	Offset *int   `query:"offset" validate:"omitempty,min=0"`
 }
@@ -61,8 +62,12 @@ func (h *Handler) GetMap(c fiber.Ctx) error {
 	onlyDue := query.onlyDue()
 	limit := query.limitOrDefault()
 	offset := query.offsetOrDefault()
+	seed := strings.TrimSpace(query.Seed)
+	if seed == "" {
+		seed = fmt.Sprintf("%d", time.Now().UnixNano())
+	}
 
-	h.logOp(c, "get_map", "loading garden map", "q", q, "tag", tagFilter, "due", onlyDue, "limit", limit, "offset", offset)
+	h.logOp(c, "get_map", "loading garden map", "q", q, "tag", tagFilter, "due", onlyDue, "seed", seed, "limit", limit, "offset", offset)
 
 	now := time.Now().UTC()
 	g, ctx := errgroup.WithContext(c.Context())
@@ -76,6 +81,7 @@ func (h *Handler) GetMap(c fiber.Ctx) error {
 			Tag:     tagFilter,
 			OnlyDue: onlyDue,
 			Now:     now,
+			Seed:    seed,
 			Limit:   limit,
 			Offset:  offset,
 		})
@@ -136,5 +142,6 @@ func (h *Handler) GetMap(c fiber.Ctx) error {
 		"offset":   offset,
 		"hasMore":  hasMore,
 		"dueCount": dueCount,
+		"seed":     seed,
 	})
 }

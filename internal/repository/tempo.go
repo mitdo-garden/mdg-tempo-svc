@@ -72,13 +72,14 @@ type MapListOpts struct {
 	Tag     string
 	OnlyDue bool
 	Now     time.Time
+	Seed    string
 	Limit   int
 	Offset  int
 }
 
 // ListMapPage returns lightweight tempo rows for the chart (no content/relations).
 // Caller must pass a valid Limit (1–100) and Offset (>= 0).
-// Order: due first, then lowest confidence, then earliest due, then name.
+// Order: earliest due first, then seeded random order by tempo ID.
 // mapPageQuery returns a new session with the map filters applied.
 // Call it once per goroutine. A GORM chain mutates its statement, so two
 // queries must not share one chain.
@@ -111,10 +112,9 @@ func (r *TempoRepository) ListMapPage(ctx context.Context, userID string, opts M
 	g.Go(func() error {
 		return r.mapPageQuery(ctx, userID, opts).
 			Select("tempos.id", "tempos.name", "tempos.confidence", "tempos.due", "tempos.scale").
-			Order(clause.Expr{SQL: "CASE WHEN tempos.due <= ? THEN 0 ELSE 1 END ASC", Vars: []any{opts.Now}}).
-			Order("tempos.confidence ASC").
 			Order("tempos.due ASC").
-			Order("tempos.name ASC").
+			Order(clause.Expr{SQL: "CRC32(CONCAT(?, tempos.id)) ASC", Vars: []any{opts.Seed}}).
+			Order("tempos.id ASC").
 			Limit(opts.Limit).
 			Offset(opts.Offset).
 			Find(&tempos).Error
@@ -172,11 +172,13 @@ func (r *TempoRepository) CountDue(ctx context.Context, userID string, now time.
 }
 
 // ListDueTempos returns tempos whose due time is <= now.
-func (r *TempoRepository) ListDueTempos(ctx context.Context, userID string, now time.Time) ([]models.Tempo, error) {
+func (r *TempoRepository) ListDueTempos(ctx context.Context, userID string, now time.Time, seed string) ([]models.Tempo, error) {
 	var tempos []models.Tempo
 	err := r.db.WithContext(ctx).
 		Where("user_id = ? AND due <= ?", userID, now).
 		Order("due ASC").
+		Order(clause.Expr{SQL: "CRC32(CONCAT(?, tempos.id)) ASC", Vars: []any{seed}}).
+		Order("tempos.id ASC").
 		Find(&tempos).Error
 	return tempos, err
 }
