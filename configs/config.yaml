@@ -51,3 +51,8 @@ telegram:
   bot_name: ${TELEGRAM_BOT_NAME:Mitdo}
   chat_id: "${TELEGRAM_CHAT_ID:}"
   interval: ${TELEGRAM_REMIND_INTERVAL:1m}
+
+aws:
+  region: "${AWS_REGION:${AWS_DEFAULT_REGION:}}"
+  secrets_id: "${AWS_SECRETS_MANAGER_SECRET_ID:${TEMPO_AWS_SECRETS_ID:}}"
+  endpoint: "${AWS_ENDPOINT_URL:}"

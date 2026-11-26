@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/mitdo-garden/mdg-tempo-svc/internal/aws"
 	"github.com/mitdo-garden/mdg-tempo-svc/internal/config"
 	"github.com/mitdo-garden/mdg-tempo-svc/internal/db"
 	"github.com/mitdo-garden/mdg-tempo-svc/internal/handlers"
@@ -29,6 +30,14 @@ func main() {
 
 	if err := os.MkdirAll(cfg.MediaUploadDir, 0o755); err != nil {
 		logger.Error("media upload dir failed", "err", err, "dir", cfg.MediaUploadDir)
+		os.Exit(1)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if err := aws.LoadAppSecrets(ctx, cfg); err != nil {
+		logger.Error("secrets manager failed", "err", err)
 		os.Exit(1)
 	}
 
@@ -66,8 +75,6 @@ func main() {
 	h := handlers.New(cfg, tempos, examples, media, tags, history, telegramChats, logger)
 	app := server.New(cfg, h, verifier, logger)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	pprof.Listen(ctx, cfg.PprofAddr, logger)
 	if cfg.TelegramBotToken != "" {
 		tg := telegram.New(cfg.TelegramBotToken)

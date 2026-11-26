@@ -141,6 +141,8 @@ Attach `AmazonSSMManagedInstanceCore` and the following ECR pull permissions to 
 
 ## Create the production environment file
 
+Tempo loads a JSON secret from AWS Secrets Manager before MySQL and JWKS validation. Supported keys include `mysql_dsn`, or `mysql_host`, `mysql_port`, `mysql_user`, `mysql_password`, `mysql_database`, and `mysql_params`. Existing environment/YAML values take precedence over secret values. The EC2 instance role needs `secretsmanager:GetSecretValue` on the configured secret.
+
 Create `/etc/mdg-tempo-svc.env` on EC2:
 
 ```dotenv
@@ -157,6 +159,8 @@ TELEGRAM_BOT_NAME=Mitdo
 TELEGRAM_CHAT_ID=<optional chat ID>
 TELEGRAM_REMIND_INTERVAL=1m
 PPROF_ADDR=
+AWS_REGION=ap-southeast-1
+AWS_SECRETS_MANAGER_SECRET_ID=mdg-tempo/prd
 ```
 
 Example permissions:

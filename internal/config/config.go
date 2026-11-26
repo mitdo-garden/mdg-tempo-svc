@@ -17,6 +17,13 @@ const (
 	EnvPrd  = "prd"
 )
 
+// AWSConfig holds the configuration for AWS services.
+type AWSConfig struct {
+	Region    string
+	SecretsID string
+	Endpoint  string
+}
+
 // Config is loaded from configs/*.yaml with ${ENV:default} placeholders
 // (APP_ENV selects the overlay).
 type Config struct {
@@ -38,6 +45,7 @@ type Config struct {
 	TelegramChatID      string
 	RemindEvery         time.Duration
 	PprofAddr           string
+	AWS                 AWSConfig
 }
 
 func Load() (*Config, error) {
@@ -89,6 +97,11 @@ func Load() (*Config, error) {
 		TelegramChatID:      strings.TrimSpace(v.GetString("telegram.chat_id")),
 		RemindEvery:         every,
 		PprofAddr:           strings.TrimSpace(v.GetString("pprof.addr")),
+		AWS: AWSConfig{
+			Region:    strings.TrimSpace(v.GetString("aws.region")),
+			SecretsID: strings.TrimSpace(v.GetString("aws.secrets_id")),
+			Endpoint:  strings.TrimSpace(v.GetString("aws.endpoint")),
+		},
 	}
 
 	if err := cfg.validate(); err != nil {
@@ -194,5 +207,44 @@ func findProjectRoot() string {
 			return wd
 		}
 		dir = parent
+	}
+}
+
+// ApplyAppSecrets fills Tempo fields from an AWS Secrets Manager JSON object.
+// Existing environment/YAML values win.
+func (c *Config) ApplyAppSecrets(data map[string]string) {
+	fill := func(dst *string, key string) {
+		if strings.TrimSpace(*dst) != "" {
+			return
+		}
+		if value := strings.TrimSpace(data[key]); value != "" {
+			*dst = value
+		}
+	}
+
+	fill(&c.FrontendURL, "frontend_url")
+	fill(&c.JWKSURL, "jwks_url")
+	fill(&c.JWTIssuer, "jwt_issuer")
+	fill(&c.MediaPublicBase, "media_public_base_url")
+	fill(&c.TelegramBotToken, "telegram_bot_token")
+	fill(&c.TelegramBotUsername, "telegram_bot_username")
+	fill(&c.TelegramBotName, "telegram_bot_name")
+	fill(&c.TelegramChatID, "telegram_chat_id")
+
+	if strings.TrimSpace(c.MySQLDSN) == "" {
+		if dsn := strings.TrimSpace(data["mysql_dsn"]); dsn != "" {
+			c.MySQLDSN = dsn
+			return
+		}
+		host := strings.TrimSpace(data["mysql_host"])
+		port := firstNonEmpty(strings.TrimSpace(data["mysql_port"]), "3306")
+		user := strings.TrimSpace(data["mysql_user"])
+		password := strings.TrimSpace(data["mysql_password"])
+		database := strings.TrimSpace(data["mysql_database"])
+		params := firstNonEmpty(strings.TrimSpace(data["mysql_params"]), "parseTime=true&loc=UTC")
+		if host != "" && user != "" && database != "" {
+			c.MySQLDSN = fmt.Sprintf("%s@tcp(%s:%s)/%s?%s",
+				url.UserPassword(user, password).String(), host, port, database, params)
+		}
 	}
 }

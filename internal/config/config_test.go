@@ -96,3 +96,22 @@ func TestValidateMissingMySQL(t *testing.T) {
 		t.Fatalf("err=%v", err)
 	}
 }
+
+func TestApplyAppSecretsMySQL(t *testing.T) {
+	cfg := &Config{}
+	cfg.ApplyAppSecrets(map[string]string{
+		"mysql_host":     "mysql.internal",
+		"mysql_port":     "3306",
+		"mysql_user":     "tempo_app",
+		"mysql_password": "p@ssword",
+		"mysql_database": "mdg_tempo",
+		"mysql_params":   "parseTime=true&loc=UTC&tls=true",
+		"jwks_url":       "https://api.mitdo.cloud/auth/.well-known/jwks.json",
+	})
+	if !strings.Contains(cfg.MySQLDSN, "@tcp(mysql.internal:3306)/mdg_tempo?") {
+		t.Fatalf("dsn=%s", cfg.MySQLDSN)
+	}
+	if cfg.JWKSURL != "https://api.mitdo.cloud/auth/.well-known/jwks.json" {
+		t.Fatalf("jwks=%s", cfg.JWKSURL)
+	}
+}
