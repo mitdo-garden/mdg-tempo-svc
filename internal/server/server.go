@@ -59,6 +59,13 @@ func New(cfg *config.Config, h *handlers.Handler, verifier *jwks.Verifier, log *
 		MaxAge:           300,
 	}))
 
+	app.Use(func(c fiber.Ctx) error {
+		if c.Method() == fiber.MethodOptions {
+			return c.SendStatus(fiber.StatusNoContent)
+		}
+		return c.Next()
+	})
+
 	app.Get("/healthz", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ok", "service": "mdg-tempo-svc"})
 	})
