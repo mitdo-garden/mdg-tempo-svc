@@ -22,6 +22,9 @@ func TestOriginAllowed(t *testing.T) {
 		{"http://mitdo.tech:5173", false, false},
 		{"http://evil.example:5173", true, false},
 		{"", true, false},
+		{"https://mitdo.cloud", false, true},
+		{"https://www.mitdo.cloud", false, true},
+		{"https://evil.mitdo.cloud.example", false, false},
 	}
 	for _, tc := range cases {
 		if got := originAllowed(tc.origin, frontend, tc.lan); got != tc.allowed {

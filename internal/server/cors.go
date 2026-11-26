@@ -6,29 +6,38 @@ import (
 	"strings"
 )
 
-const publicDomain = "mitdo.tech"
-
-// originAllowed accepts the configured frontend origin. In dev it also accepts
-// mitdo.tech (any port) and the same scheme and port on localhost or any IP.
+// originAllowed accepts the configured frontend origin plus Mitdo public domains.
+// In dev it also accepts the same scheme/port on localhost or LAN hosts.
 func originAllowed(origin, frontendURL string, allowLAN bool) bool {
 	origin = strings.TrimRight(strings.TrimSpace(origin), "/")
 	frontendURL = strings.TrimRight(strings.TrimSpace(frontendURL), "/")
-	if origin == "" || frontendURL == "" {
+	if origin == "" {
 		return false
 	}
-	if origin == frontendURL {
+	if frontendURL != "" && origin == frontendURL {
 		return true
 	}
-	if !allowLAN {
-		return false
-	}
-	want, err := url.Parse(frontendURL)
-	got, err2 := url.Parse(origin)
-	if err != nil || err2 != nil || want.Scheme == "" || got.Hostname() == "" {
+
+	got, err := url.Parse(origin)
+	if err != nil || got.Hostname() == "" {
 		return false
 	}
 	if onPublicDomain(got.Hostname()) {
-		return true
+		if strings.EqualFold(got.Scheme, "https") {
+			return true
+		}
+		if allowLAN && strings.EqualFold(got.Scheme, "http") {
+			return true
+		}
+		return false
+	}
+
+	if !allowLAN || frontendURL == "" {
+		return false
+	}
+	want, err := url.Parse(frontendURL)
+	if err != nil || want.Scheme == "" {
+		return false
 	}
 	if !strings.EqualFold(got.Scheme, want.Scheme) || got.Port() != want.Port() {
 		return false
@@ -38,7 +47,12 @@ func originAllowed(origin, frontendURL string, allowLAN bool) bool {
 
 func onPublicDomain(host string) bool {
 	host = strings.Trim(strings.ToLower(host), "[]")
-	return host == publicDomain || strings.HasSuffix(host, "."+publicDomain)
+	for _, domain := range []string{"mitdo.cloud", "mitdo.tech"} {
+		if host == domain || strings.HasSuffix(host, "."+domain) {
+			return true
+		}
+	}
+	return false
 }
 
 func lanHost(host string) bool {
