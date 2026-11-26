@@ -88,3 +88,11 @@ func TestNormalizeEnv(t *testing.T) {
 		t.Fatal("production alias")
 	}
 }
+
+func TestValidateMissingMySQL(t *testing.T) {
+	cfg := &Config{}
+	err := cfg.ValidateMySQL()
+	if err == nil || !strings.Contains(err.Error(), "MYSQL_DSN or MYSQL_* env") {
+		t.Fatalf("err=%v", err)
+	}
+}

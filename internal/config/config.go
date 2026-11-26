@@ -115,9 +115,6 @@ func mysqlDSN(v *viper.Viper) string {
 }
 
 func (c *Config) validate() error {
-	if strings.TrimSpace(c.MySQLDSN) == "" {
-		return fmt.Errorf("mysql is required in YAML")
-	}
 	if strings.TrimSpace(c.FrontendURL) == "" {
 		return fmt.Errorf("frontend.url is required in YAML")
 	}
@@ -126,6 +123,14 @@ func (c *Config) validate() error {
 	}
 	if strings.TrimSpace(c.JWTIssuer) == "" {
 		return fmt.Errorf("jwt.issuer is required in YAML")
+	}
+	return nil
+}
+
+// ValidateMySQL checks MySQL configuration after environment and secrets have been applied.
+func (c *Config) ValidateMySQL() error {
+	if strings.TrimSpace(c.MySQLDSN) == "" {
+		return fmt.Errorf("mysql configuration is required (MYSQL_DSN or MYSQL_* env)")
 	}
 	return nil
 }
