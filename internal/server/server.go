@@ -85,17 +85,17 @@ func New(cfg *config.Config, h *handlers.Handler, verifier *jwks.Verifier, log *
 
 		// Tempo detail
 		r.Post("", h.PostTempo)
+		r.Get("/tags", h.GetTags)
+		r.Get("/settings/telegram", h.GetTelegramChat)
+		r.Patch("/settings/telegram", h.PatchTelegramChat)
+		r.Post("/settings/telegram/link", h.PostTelegramLink)
 		r.Get("/:id", h.GetTempo)
 		r.Patch("/:id", h.PatchTempo)
 		r.Delete("/:id", h.DeleteTempo)
 		r.Put("/:id/tags", h.PutTags)
-		r.Get("/tags", h.GetTags)
 		r.Post("/:id/media", h.PostMedia)
 		r.Delete("/:id/media/:mediaId", h.DeleteMedia)
 		r.Patch("/:id/reminder", h.PatchReminder)
-		r.Get("/settings/telegram", h.GetTelegramChat)
-		r.Patch("/settings/telegram", h.PatchTelegramChat)
-		r.Post("/settings/telegram/link", h.PostTelegramLink)
 	}
 
 	register(app.Group("/tempos"))
