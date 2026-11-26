@@ -54,6 +54,9 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push Docker image
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
@@ -62,9 +65,10 @@ jobs:
         run: |
           set -euo pipefail
           aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" >/dev/null 2>&1 || aws ecr create-repository --repository-name "$ECR_REPOSITORY" >/dev/null
-          docker build --tag "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" --tag "$ECR_REGISTRY/$ECR_REPOSITORY:latest" .
-          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          docker buildx build --platform linux/amd64 --push \
+            --tag "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            --tag "$ECR_REGISTRY/$ECR_REPOSITORY:latest" \
+            .
 
       - name: Deploy Docker image on EC2 through SSM
         env:
@@ -108,12 +112,7 @@ jobs:
               f"docker image inspect '{image}' --format 'digest={{json .RepoDigests}} size={{.Size}}'",
               "mkdir -p /var/lib/mdg-tempo-svc/uploads",
               f"docker run -d --name mdg-tempo-svc --restart unless-stopped -p 8081:8081 --env-file /etc/mdg-tempo-svc.env -v /var/lib/mdg-tempo-svc/uploads:/app/uploads '{image}'",
-              "printf '%s\\n' '[Unit]' 'Description=Mitdo Garden Tempo Service' 'After=network-online.target docker.service' 'Requires=docker.service' '' '[Service]' 'Restart=always' 'ExecStart=/usr/bin/docker start -a mdg-tempo-svc' 'ExecStop=/usr/bin/docker stop mdg-tempo-svc' '' '[Install]' 'WantedBy=multi-user.target' > /etc/systemd/system/mdg-tempo-svc.service",
-              "systemctl daemon-reload",
-              "systemctl enable mdg-tempo-svc",
-              "systemctl restart mdg-tempo-svc",
               "docker ps -a --filter name=^/mdg-tempo-svc$ --format 'table {{.Names}}\\t{{.Status}}\\t{{.Image}}\\t{{.Ports}}'",
-              "docker inspect mdg-tempo-svc --format 'container_id={{.Id}} image={{.Config.Image}} status={{.State.Status}} exit_code={{.State.ExitCode}} restart_count={{.RestartCount}}'",
               "for i in $(seq 1 30); do echo \"Health check attempt $i/30\"; if curl -v -fsS http://127.0.0.1:8081/healthz; then echo 'Health check passed'; exit 0; fi; echo 'Health check failed; container logs:'; docker logs --tail 50 mdg-tempo-svc 2>&1 || true; sleep 2; done",
               "echo 'Health check timed out after 30 attempts' >&2",
               "docker ps -a --filter name=^/mdg-tempo-svc$",
