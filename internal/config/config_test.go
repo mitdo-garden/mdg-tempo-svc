@@ -64,12 +64,12 @@ func TestMySQLHostEnvPlaceholder(t *testing.T) {
 
 func TestJWKSURLEnvPlaceholder(t *testing.T) {
 	t.Setenv("APP_ENV", "test")
-	t.Setenv("JWT_JWKS_URL", "http://auth:8080/.well-known/jwks.json")
+	t.Setenv("JWT_JWKS_URL", "http://auth:8080/auth/.well-known/jwks.json")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.JWKSURL != "http://auth:8080/.well-known/jwks.json" {
+	if cfg.JWKSURL != "http://auth:8080/auth/.well-known/jwks.json" {
 		t.Fatalf("jwks=%s", cfg.JWKSURL)
 	}
 }

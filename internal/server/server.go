@@ -19,7 +19,7 @@ import (
 // New builds the Fiber app with Review / Tempo / Map routes.
 func New(cfg *config.Config, h *handlers.Handler, verifier *jwks.Verifier, log *slog.Logger) *fiber.App {
 	app := fiber.New(fiber.Config{
-		AppName:     "mdg-tempo-svc",
+		AppName:      "mdg-tempo-svc",
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -76,30 +76,29 @@ func New(cfg *config.Config, h *handlers.Handler, verifier *jwks.Verifier, log *
 
 		// Review
 		r.Get("/review", h.GetReview)
-		r.Get("/review/tempos/:id", h.GetReviewTempo)
-		r.Post("/tempos/:id/reviews", h.PostReview)
-		r.Post("/tempos/:id/examples/generate", h.GenerateExample)
-		r.Post("/tempos/:id/examples", h.PostExample)
-		r.Patch("/tempos/:id/examples/:exampleId", h.PatchExample)
-		r.Delete("/tempos/:id/examples/:exampleId", h.DeleteExample)
+		r.Get("/review/:id", h.GetReviewTempo)
+		r.Post("/:id/reviews", h.PostReview)
+		r.Post("/:id/examples/generate", h.GenerateExample)
+		r.Post("/:id/examples", h.PostExample)
+		r.Patch("/:id/examples/:exampleId", h.PatchExample)
+		r.Delete("/:id/examples/:exampleId", h.DeleteExample)
 
 		// Tempo detail
-		r.Post("/tempos", h.PostTempo)
-		r.Get("/tempos/:id", h.GetTempo)
-		r.Patch("/tempos/:id", h.PatchTempo)
-		r.Delete("/tempos/:id", h.DeleteTempo)
-		r.Put("/tempos/:id/tags", h.PutTags)
+		r.Post("", h.PostTempo)
+		r.Get("/:id", h.GetTempo)
+		r.Patch("/:id", h.PatchTempo)
+		r.Delete("/:id", h.DeleteTempo)
+		r.Put("/:id/tags", h.PutTags)
 		r.Get("/tags", h.GetTags)
-		r.Post("/tempos/:id/media", h.PostMedia)
-		r.Delete("/tempos/:id/media/:mediaId", h.DeleteMedia)
-		r.Patch("/tempos/:id/reminder", h.PatchReminder)
+		r.Post("/:id/media", h.PostMedia)
+		r.Delete("/:id/media/:mediaId", h.DeleteMedia)
+		r.Patch("/:id/reminder", h.PatchReminder)
 		r.Get("/settings/telegram", h.GetTelegramChat)
 		r.Patch("/settings/telegram", h.PatchTelegramChat)
 		r.Post("/settings/telegram/link", h.PostTelegramLink)
 	}
 
-	register(app.Group("/v1"))
-	register(app.Group(""))
+	register(app.Group("/tempos"))
 
 	return app
 }

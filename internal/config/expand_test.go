@@ -18,8 +18,8 @@ func TestExpandStringEnvWins(t *testing.T) {
 }
 
 func TestExpandStringURLDefault(t *testing.T) {
-	got := ExpandString("${JWKS_URL_UNSET:http://localhost:8080/.well-known/jwks.json}")
-	if got != "http://localhost:8080/.well-known/jwks.json" {
+	got := ExpandString("${JWKS_URL_UNSET:http://localhost:8080/auth/.well-known/jwks.json}")
+	if got != "http://localhost:8080/auth/.well-known/jwks.json" {
 		t.Fatalf("got %q", got)
 	}
 }

@@ -10,10 +10,10 @@ mysql:
   port: "${MYSQL_PORT:3306}"
   params: "${MYSQL_PARAMS:parseTime=true&loc=UTC&tls=true}"
   user: ${MYSQL_USER:3Gkv9nJJJ1CuB2R.root}
-  password: "${MYSQL_PASSWORD:StLjClL3uRDdv7PF}"
+  password: "${MYSQL_PASSWORD:}"
 
 jwt:
-  jwks_url: ${JWT_JWKS_URL:http://localhost:8080/.well-known/jwks.json}
+  jwks_url: ${JWT_JWKS_URL:http://localhost:8080/auth/.well-known/jwks.json}
 
 frontend:
   url: ${FRONTEND_URL:http://mitdo.tech:5173}

@@ -6,7 +6,7 @@ server:
   port: "${SERVER_PORT:8081}"
 
 frontend:
-  url: ${FRONTEND_URL:http://mitdo.cloud}
+  url: ${FRONTEND_URL:https://mitdo.cloud}
 
 # Off unless an operator sets PPROF_ADDR=127.0.0.1:6060 for a live profile.
 pprof:

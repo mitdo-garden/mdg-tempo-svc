@@ -46,11 +46,11 @@ Profiles merge like Spring: `config.yaml` → `config.<APP_ENV>.yaml` → extras
 | `config.test.yaml` | `APP_ENV=test` — port **5003**, DB `mdg_tempo_test` |
 | `config.prd.yaml` | `APP_ENV=prd` — port only; inject the rest via env |
 
-Auth JWKS URL (dev): `http://localhost:8080/.well-known/jwks.json`. Cookie name: `mitdo_session` (same as auth-svc). CORS allows `frontend.url` with credentials.
+Auth JWKS URL (dev): `http://localhost:8080/auth/.well-known/jwks.json`. Cookie name: `mitdo_session` (same as auth-svc). CORS allows `frontend.url` with credentials.
 
 ## Endpoints
 
-All routes (except `/healthz` and `/media/*`) require a valid access JWT via `Authorization: Bearer` or the `mitdo_session` cookie. Dual mount: `/…` and `/v1/…`.
+All routes (except `/healthz` and `/media/*`) require a valid access JWT via `Authorization: Bearer` or the `mitdo_session` cookie. Context mount: `/tempos`.
 
 | Method | Path | Description |
 |--------|------|-------------|
