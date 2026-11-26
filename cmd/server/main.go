@@ -40,6 +40,10 @@ func main() {
 		logger.Error("secrets manager failed", "err", err)
 		os.Exit(1)
 	}
+	logger.Info("tempo config secrets loaded",
+		"aws_secrets_id_configured", cfg.AWS.SecretsID != "",
+		"mysql_configured", cfg.MySQLDSN != "",
+	)
 
 	jwksClient, err := jwks.NewClient(cfg.JWKSURL)
 	if err != nil {

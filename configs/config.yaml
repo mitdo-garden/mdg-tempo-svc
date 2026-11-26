@@ -52,7 +52,9 @@ telegram:
   chat_id: "${TELEGRAM_CHAT_ID:}"
   interval: ${TELEGRAM_REMIND_INTERVAL:1m}
 
-aws:
-  region: "${AWS_REGION:${AWS_DEFAULT_REGION:}}"
-  secrets_id: "${AWS_SECRETS_MANAGER_SECRET_ID:${TEMPO_AWS_SECRETS_ID:}}"
-  endpoint: "${AWS_ENDPOINT_URL:}"
+kms:
+  region: "${KMS_REGION:${AWS_REGION:${AWS_DEFAULT_REGION:}}}"
+  key_id: "${KMS_KEY_ID:}"
+  kid: ${KMS_KID:kms-1}
+  secrets_id: "${KMS_SECRETS_ID:${AWS_SECRETS_MANAGER_SECRET_ID:}}"
+  endpoint: "${KMS_ENDPOINT:${AWS_ENDPOINT_URL:}}"

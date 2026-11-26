@@ -115,3 +115,17 @@ func TestApplyAppSecretsMySQL(t *testing.T) {
 		t.Fatalf("jwks=%s", cfg.JWKSURL)
 	}
 }
+
+func TestAWSSecretIDAliases(t *testing.T) {
+	t.Setenv("APP_ENV", "prd")
+	t.Setenv("KMS_SECRETS_ID", "mdg-tempo/prd")
+	t.Setenv("JWT_JWKS_URL", "https://api.mitdo.cloud/auth/.well-known/jwks.json")
+	t.Setenv("FRONTEND_URL", "https://mitdo.cloud")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.AWS.SecretsID != "mdg-tempo/prd" {
+		t.Fatalf("secrets_id=%q", cfg.AWS.SecretsID)
+	}
+}

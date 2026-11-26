@@ -46,5 +46,8 @@ func LoadAppSecrets(ctx context.Context, cfg *mdgconfig.Config) error {
 		return fmt.Errorf("secretsmanager %q: expect JSON object: %w", id, err)
 	}
 	cfg.ApplyAppSecrets(data)
+	if cfg.MySQLDSN == "" {
+		return fmt.Errorf("secretsmanager %q: secret contains no usable mysql_dsn or mysql_host/mysql_user/mysql_database fields", id)
+	}
 	return nil
 }

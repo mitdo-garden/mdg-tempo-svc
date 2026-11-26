@@ -98,9 +98,9 @@ func Load() (*Config, error) {
 		RemindEvery:         every,
 		PprofAddr:           strings.TrimSpace(v.GetString("pprof.addr")),
 		AWS: AWSConfig{
-			Region:    strings.TrimSpace(v.GetString("aws.region")),
-			SecretsID: strings.TrimSpace(v.GetString("aws.secrets_id")),
-			Endpoint:  strings.TrimSpace(v.GetString("aws.endpoint")),
+			Region:    strings.TrimSpace(v.GetString("kms.region")),
+			SecretsID: strings.TrimSpace(v.GetString("kms.secrets_id")),
+			Endpoint:  strings.TrimSpace(v.GetString("kms.endpoint")),
 		},
 	}
 
@@ -143,7 +143,7 @@ func (c *Config) validate() error {
 // ValidateMySQL checks MySQL configuration after environment and secrets have been applied.
 func (c *Config) ValidateMySQL() error {
 	if strings.TrimSpace(c.MySQLDSN) == "" {
-		return fmt.Errorf("mysql configuration is required (MYSQL_DSN or MYSQL_* env)")
+		return fmt.Errorf("mysql configuration is required (MYSQL_DSN or MYSQL_* env or secrets backend)")
 	}
 	return nil
 }
