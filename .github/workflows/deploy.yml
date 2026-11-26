@@ -88,11 +88,25 @@ jobs:
               "chmod 600 /etc/mdg-tempo-svc.env",
               "command -v docker >/dev/null || (echo 'ERROR: Docker is not installed' >&2; exit 1)",
               "command -v curl >/dev/null || (echo 'ERROR: curl is not installed' >&2; exit 1)",
+              "echo 'Disk usage before deployment:'",
+              "df -h /",
+              "docker ps -a --filter name=^/mdg-tempo-svc$ --format 'Existing container: {{.Names}} {{.Status}}' || true",
+              "docker rm -f mdg-tempo-svc 2>/dev/null || true",
+              "echo 'Removing unused Docker data, containerd cache, and old logs:'",
+              "docker system prune -af --volumes || true",
+              "docker builder prune -af || true",
+              "journalctl --vacuum-size=100M 2>/dev/null || true",
+              "rm -rf /var/log/journal/*/*.journal~ 2>/dev/null || true",
+              "echo 'Disk usage after cleanup:'",
+              "df -h /",
+              "docker system df || true",
+              "AVAILABLE_KB=$(df -Pk / | awk 'NR==2 {print $4}')",
+              "echo \"Available disk: ${AVAILABLE_KB} KB\"",
+              "if [ \"$AVAILABLE_KB\" -lt 2097152 ]; then echo 'ERROR: less than 2 GiB remains on /; deployment aborted' >&2; df -h /; exit 1; fi",
               "aws ecr get-login-password --region '" + os.environ["AWS_REGION"] + "' | docker login --username AWS --password-stdin '" + os.environ["ECR_REGISTRY"] + "'",
               f"docker pull '{image}'",
               f"docker image inspect '{image}' --format 'digest={{json .RepoDigests}} size={{.Size}}'",
               "mkdir -p /var/lib/mdg-tempo-svc/uploads",
-              "docker rm -f mdg-tempo-svc 2>/dev/null || true",
               f"docker run -d --name mdg-tempo-svc --restart unless-stopped -p 8081:8081 --env-file /etc/mdg-tempo-svc.env -v /var/lib/mdg-tempo-svc/uploads:/app/uploads '{image}'",
               "printf '%s\\n' '[Unit]' 'Description=Mitdo Garden Tempo Service' 'After=network-online.target docker.service' 'Requires=docker.service' '' '[Service]' 'Restart=always' 'ExecStart=/usr/bin/docker start -a mdg-tempo-svc' 'ExecStop=/usr/bin/docker stop mdg-tempo-svc' '' '[Install]' 'WantedBy=multi-user.target' > /etc/systemd/system/mdg-tempo-svc.service",
               "systemctl daemon-reload",
@@ -107,7 +121,10 @@ jobs:
               "docker logs --tail 100 mdg-tempo-svc 2>&1 || true",
               "exit 1",
           ]
-          print(json.dumps({"commands": commands}))
+          print(json.dumps({
+              "commands": commands,
+              "executionTimeout": ["5400"],
+          }))
           PY
           )
 
@@ -116,21 +133,33 @@ jobs:
             --document-name AWS-RunShellScript \
             --comment "Deploy mdg-tempo-svc ${IMAGE_TAG} to EC2" \
             --parameters "$PARAMETERS" \
+            --timeout-seconds 5400 \
             --query 'Command.CommandId' \
             --output text)
 
           echo "SSM command ID: $COMMAND_ID"
 
-          WAIT_STATUS=0
-          aws ssm wait command-executed \
-            --command-id "$COMMAND_ID" \
-            --instance-id "$EC2_INSTANCE_ID" || WAIT_STATUS=$?
+          COMMAND_STATUS="InProgress"
+          for attempt in $(seq 1 360); do
+            COMMAND_STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$EC2_INSTANCE_ID" \
+              --query 'Status' \
+              --output text 2>/dev/null || true)
 
-          COMMAND_STATUS=$(aws ssm get-command-invocation \
-            --command-id "$COMMAND_ID" \
-            --instance-id "$EC2_INSTANCE_ID" \
-            --query 'Status' \
-            --output text)
+            case "$COMMAND_STATUS" in
+              Success|Failed|Cancelled|TimedOut)
+                break
+                ;;
+              *)
+                echo "Waiting for SSM command ($attempt/360): $COMMAND_STATUS"
+                sleep 15
+                ;;
+            esac
+          done
+
+          WAIT_STATUS=0
+          if [ "$COMMAND_STATUS" != "Success" ]; then WAIT_STATUS=1; fi
 
           aws ssm get-command-invocation \
             --command-id "$COMMAND_ID" \
